@@ -48,8 +48,11 @@ public abstract class Validator {
      * @param message mensaje de error.
      */
     protected void error(String message) {
-        List<String> errors = session.attribute("errors");
-        errors.add(message);
+        if (null != session) {
+            List<String> errors = session.attribute("errors");
+            errors.add(message);
+            session.attribute("errors", errors);
+        }
         error = true;
     }
 

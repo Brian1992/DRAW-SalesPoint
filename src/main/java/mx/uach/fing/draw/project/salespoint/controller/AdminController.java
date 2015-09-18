@@ -16,9 +16,7 @@
  */
 package mx.uach.fing.draw.project.salespoint.controller;
 
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 import mx.uach.fing.draw.project.salespoint.HibernateUtil;
 import mx.uach.fing.draw.project.salespoint.model.SaleOrder;
@@ -34,18 +32,45 @@ import spark.Request;
 import spark.Response;
 
 /**
- * 
+ *
  * @author Luis Chávez Bustamante
  */
-
 //Esta clase le agrega a la aplicacion todas las acciones que puede realizar un administrador
-public class AdminController {
-   
+public class AdminController extends Controller {
+
+    /**
+     * Crea la cuenta de administrador solo si no existe.
+     */
+    public void createDefaultAdminUser() {
+        SessionFactory sessionFactory = HibernateUtil.getSessionFactory();
+        Session session = sessionFactory.openSession();
+
+        User admin = (User) session.createCriteria(User.class)
+                .add(Restrictions.eq("nickname", "admin"))
+                .uniqueResult();
+
+        if (null == admin) {
+            Transaction transaction = session.beginTransaction();
+
+            User user = new User();
+            user.setName("admin");
+            user.setLastName("admin");
+            user.setNickname("admin");
+            user.setPassword("admin");
+            user.setIsAdmin(true);
+
+            session.save(user);
+
+            transaction.commit();
+            session.close();
+        }
+    }
+
     //Este metodo le muestra las ordenes de los usuarios al administrador
-    public static ModelAndView admin(Request request, Response response) {
+    public ModelAndView admin(Request request, Response response) {
         User user = request.session().attribute("user");
 
-        if (!user.getIsAdmin()) {
+        if (null == user || !user.getIsAdmin()) {
             response.redirect("/");
         }
 
@@ -55,17 +80,16 @@ public class AdminController {
         List<SaleOrder> orders = session.createCriteria(SaleOrder.class)
                 .list();
 
-        Map<String, Object> map = new HashMap<>();
-        map.put("orders", orders);
+        set("orders", orders);
 
-        return new ModelAndView(map, "admin.ftl");
+        return new ModelAndView(values(request), "admin.ftl");
     }
-    
+
     //Este metodo le permite al administrador liberar los pedidos
-    public static Object updateOrderStatus(Request request, Response response) {
+    public Object updateOrderStatus(Request request, Response response) {
         User user = request.session().attribute("user");
 
-        if (!user.getIsAdmin()) {
+        if (null == user || !user.getIsAdmin()) {
             response.redirect("/");
         }
 
@@ -79,7 +103,7 @@ public class AdminController {
             errors = true;
         }
 
-        if ("LIBERAR".equals(status)) {
+        if (!"LIBERAR".equals(status)) {
             errors = true;
         }
 
@@ -88,7 +112,7 @@ public class AdminController {
             Session session = sessionFactory.openSession();
 
             SaleOrder saleOrder = (SaleOrder) session.createCriteria(SaleOrder.class)
-                    .add(Restrictions.eq("order_id", id))
+                    .add(Restrictions.eq("orderId", id))
                     .uniqueResult();
 
             Transaction transaction = session.beginTransaction();

@@ -14,39 +14,35 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-package mx.uach.fing.draw.project.salespoint.filter;
+package mx.uach.fing.draw.project.salespoint.controller;
 
-import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
-import spark.Filter;
 import spark.Request;
-import spark.Response;
 
 /**
- * Filtros para manejar los errores de los formularios.
+ * Clase abstracta con metodos pre-definidos para manejar las variables de la
+ * vista.
  *
  * @author Luis Chávez Bustamante
  */
-public class ErrorFilter {
+public abstract class Controller {
 
-    public static final CreateErrors CREATE_ERRORS = new CreateErrors();
+    // Mapa con las variables a mostrar en la vista.
+    private final Map<String, Object> map = new HashMap<>();
 
-    private ErrorFilter() {
+    protected void set(String key, Object value) {
+        map.put(key, value);
     }
 
-    /**
-     * Filtro para crear un arreglo de errores.
-     */
-    public static class CreateErrors implements Filter {
-
-        @Override
-        public void handle(Request request, Response response)
-                throws Exception {
-            List<String> errors = request.session().attribute("errors");
-            if (null == errors) {
-                request.session().attribute("errors", new ArrayList<>());
-            }
-        }
+    protected Map<String, Object> values(Request request) {
+        map.put("session", request.session());
+        List<String> errors = request.session().attribute("errors");
+        request.session().removeAttribute("errors");
+        map.put("errors", errors);
+        map.put("user", request.session().attribute("user"));
+        return map;
     }
 }
